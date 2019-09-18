@@ -8,9 +8,9 @@ bluebox = Rect((100, 0), (50, 50))
 
 def draw():
     screen.clear()
-    screen.draw.filled_rect(redbox, (255, 0, 0))
-    screen.draw.filled_rect(greenbox, (0, 255, 0))
-    screen.draw.filled_rect(bluebox, (0, 0, 255))
+    screen.draw.filled_rect(redbox, (0, 100, 100))
+    screen.draw.filled_rect(greenbox, (0, 255,160))
+    screen.draw.filled_rect(bluebox, (0, 45, 255))
 
 def update():
     for box in [redbox, greenbox, bluebox]:
