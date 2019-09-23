@@ -44,9 +44,9 @@ def update():
 
 
 def on_key_down(key):
-    if key == keys.A:
+    if key == keys.S and not player1['selected_block']:
         drop_block(player1, select_block(player1))
-    if key == keys.K:
+    if key == keys.K and not player2['selected_block']:
         drop_block(player2, select_block(player2))
 
 
