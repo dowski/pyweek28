@@ -13,7 +13,7 @@ cannon = Actor('cannon')
 small_shield = Actor('small_shield')
 basic = Actor('basic')
 inventory = [cannon, small_shield, basic]
-picture = ['cannon', 'small_shield', 'basic']
+picture = ['cannon', 'small_shield', 'basic', 'shotgun', 'large_shield']
 all_blocks = [cannon, small_shield, basic]
 selected_block = 1
 new_block = 0
@@ -45,7 +45,7 @@ def replace_block():
     inventory[selected_block] = new_block
 
 
-def on_key_down(key):
+def on_key_up(key):
     # When the S key is pressed, add a block for player 1
     global selected_block
     if key == keys.S:
@@ -62,8 +62,6 @@ def on_key_down(key):
         block.y = HEIGHT - block.height // 2
         tower2.append(block)
         print("Player 2 tower has {} blocks".format(len(tower2)))
-
-def on_key_up(key):
     if key == keys.A:
         if selected_block > 0:
             switch_selected_block(-1)
