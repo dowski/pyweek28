@@ -62,17 +62,18 @@ def on_key_down(key):
         block.y = HEIGHT - block.height // 2
         tower2.append(block)
         print("Player 2 tower has {} blocks".format(len(tower2)))
+
 def on_key_up(key):
-    global selected_block
     if key == keys.A:
         if selected_block > 0:
-            inventory[1].pos = (inventory[1].x - 32, 50)
-            inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
-            inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
-            selected_block -= 1
+            switch_selected_block(-1)
     if key == keys.D:
         if selected_block < 2:
-            inventory[1].pos = (inventory[1].x + 32, 50)
-            inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
-            inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
-            selected_block += 1
+            switch_selected_block(1)
+
+def switch_selected_block(direction):
+    global selected_block
+    inventory[1].pos = (inventory[1].x + (direction * inventory[1].width), inventory[1].y)
+    inventory[0].pos = (inventory[0].x + (direction * inventory[0].width), inventory[0].y)
+    inventory[2].pos = (inventory[2].x + (direction * inventory[2].width), inventory[2].y)
+    selected_block += direction
