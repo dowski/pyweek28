@@ -2,28 +2,37 @@
 WIDTH = 600
 HEIGHT = 800
 
-HALF_WIDTH = WIDTH / 2
-PLAYER_1_X = HALF_WIDTH - HALF_WIDTH / 2
-PLAYER_2_X = HALF_WIDTH + HALF_WIDTH / 2
+HALF_WIDTH = WIDTH // 2
+PLAYER_1_X = HALF_WIDTH - HALF_WIDTH // 2
+PLAYER_2_X = HALF_WIDTH + HALF_WIDTH // 2
+
+INVENTORY_MIDDLE = 1
 
 BLOCK_BASIC = 'block_basic'
 
 
-def make_block(block_type):
-    return Actor(block_type, pos=(WIDTH / 2, 0))
+def add_block(block_type, player):
+    block = Actor(block_type)
+    block.y = block.height // 2
+    if len(player['inventory']) < 3:
+        block.x = player['x'] + len(player['inventory']) * block.width - block.width
+        player['inventory'].append(block)
+    else:
+        block.x = player['x']
+        player['inventory'][INVENTORY_MIDDLE] = block
 
 
 def make_player(x):
-    return {
+    player = {
         'tower': [],
-        'inventory': [
-            make_block(BLOCK_BASIC),
-            make_block(BLOCK_BASIC),
-            make_block(BLOCK_BASIC)
-        ],
+        'inventory': [],
         'selected_block': None,
         'x': x,
     }
+    add_block(BLOCK_BASIC, player)
+    add_block(BLOCK_BASIC, player)
+    add_block(BLOCK_BASIC, player)
+    return player
 
 
 player1 = make_player(PLAYER_1_X)
@@ -37,7 +46,9 @@ def draw():
             block.draw()
         if player['selected_block']:
             player['selected_block'].draw()
-
+        for block in player['inventory']:
+            if block:
+                block.draw()
 
 def update():
     pass
@@ -52,10 +63,9 @@ def on_key_down(key):
 
 
 def select_block(player):
-    block = player['inventory'].pop()
-    block.x = player['x']
+    block = player['inventory'][INVENTORY_MIDDLE]
+    player['inventory'][INVENTORY_MIDDLE] = None
     player['selected_block'] = block
-    player['inventory'].insert(0, make_block(BLOCK_BASIC))
     return player['selected_block']
 
 
@@ -70,3 +80,4 @@ def add_dropped_blocks_to_tower():
             continue
         player['tower'].append(player['selected_block'])
         player['selected_block'] = None
+        add_block(BLOCK_BASIC, player)
