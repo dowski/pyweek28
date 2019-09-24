@@ -1,4 +1,6 @@
+import random
 # Stacky Tower
+
 WIDTH = 480
 HEIGHT = 640
 
@@ -12,7 +14,9 @@ small_shield = Actor('small_shield')
 basic = Actor('basic')
 inventory = [cannon, small_shield, basic]
 picture = ['cannon', 'small_shield', 'basic']
-selcted_block = 1
+all_blocks = [cannon, small_shield, basic]
+selected_block = 1
+new_block = 0
 TOWER1_X = WIDTH // 4
 TOWER2_X = TOWER1_X * 3
 inventory[1].pos = (TOWER1_X, 50)
@@ -33,15 +37,23 @@ def draw():
 def update():
     pass
 
+def replace_block():
+    new_block_image = random.choice(picture)
+    new_block = Actor(new_block_image)
+    new_block.x = TOWER1_X
+    new_block.y = 50
+    inventory[selected_block] = new_block
+
 
 def on_key_down(key):
     # When the S key is pressed, add a block for player 1
-    global selcted_block
+    global selected_block
     if key == keys.S:
-        block = inventory[selcted_block] = Actor(picture[selcted_block])
+        block = inventory[selected_block] = Actor(picture[selected_block])
         block.x = TOWER1_X
         block.y = HEIGHT - block.height // 2
         tower1.append(block)
+        replace_block()
         print("Player 1 tower has {} blocks".format(len(tower1)))
     # When the K key is pressed, add a block for player 2
     elif key == keys.K:
@@ -51,16 +63,16 @@ def on_key_down(key):
         tower2.append(block)
         print("Player 2 tower has {} blocks".format(len(tower2)))
 def on_key_up(key):
-    global selcted_block
+    global selected_block
     if key == keys.A:
-        if selcted_block > 0:
+        if selected_block > 0:
             inventory[1].pos = (inventory[1].x - 32, 50)
             inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
             inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
-            selcted_block -= 1
+            selected_block -= 1
     if key == keys.D:
-        if selcted_block < 2:
+        if selected_block < 2:
             inventory[1].pos = (inventory[1].x + 32, 50)
             inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
             inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
-            selcted_block += 1
+            selected_block += 1
