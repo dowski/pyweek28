@@ -54,9 +54,9 @@ def on_key_up(key):
     # When the S key is pressed, add a block for player 1
     global selected_block, debug
     if key == keys.S:
-        block = inventory[selected_block] = Actor(picture[selected_block])
+        block = inventory[selected_block]
         block.x = TOWER1_X
-        block.y = HEIGHT - block.height // 2
+        block.y = HEIGHT - len(tower1) * block.height - block.height // 2
         tower1.append(block)
         replace_block()
         print("Player 1 tower has {} blocks".format(len(tower1)))
