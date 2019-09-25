@@ -19,6 +19,7 @@ selected_block = 1
 new_block = 0
 TOWER1_X = WIDTH // 4
 TOWER2_X = TOWER1_X * 3
+selected = Actor('selected_block',(TOWER1_X, 50))
 inventory[1].pos = (TOWER1_X, 50)
 inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
 inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
@@ -37,6 +38,7 @@ def draw():
     if debug:
         screen.draw.text("inventory: {}".format(", ".join(i.image for i in inventory)), (10, 80))
         screen.draw.text("selected_block: {}".format(selected_block), (10, 100))
+    selected.draw()
 
 
 def update():
