@@ -23,6 +23,8 @@ selected = Actor('selected_block',(TOWER1_X, 50))
 inventory[1].pos = (TOWER1_X, 50)
 inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
 inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
+player1_falling_block = None
+last_fall_duration = 0.0
 
 # In the game, press / to show debug info
 debug = False
@@ -35,9 +37,12 @@ def draw():
         block.draw()
     for block in inventory:
         block.draw()
+    if player1_falling_block:
+        player1_falling_block.draw()
     if debug:
         screen.draw.text("inventory: {}".format(", ".join(i.image for i in inventory)), (10, 80))
         screen.draw.text("selected_block: {}".format(selected_block), (10, 100))
+        screen.draw.text("last_fall_duration: {}".format(last_fall_duration), (10, 120))
     selected.draw()
 
 
@@ -51,15 +56,25 @@ def replace_block():
     new_block.y = 50
     inventory[selected_block] = new_block
 
+def drop_block():
+    global player1_falling_block, last_fall_duration
+    block = inventory[selected_block]
+    block.x = TOWER1_X
+    target_y = HEIGHT - len(tower1) * block.height - block.height // 2
+    last_fall_duration = duration = 1.0 * (target_y / HEIGHT)
+    animate(block, duration=duration, y=target_y, tween='bounce_end', on_finished=stop_dropping)
+    player1_falling_block = block
+
+def stop_dropping():
+    global player1_falling_block
+    tower1.append(player1_falling_block)
+    player1_falling_block = None
 
 def on_key_up(key):
     # When the S key is pressed, add a block for player 1
     global selected_block, debug
-    if key == keys.S:
-        block = inventory[selected_block]
-        block.x = TOWER1_X
-        block.y = HEIGHT - len(tower1) * block.height - block.height // 2
-        tower1.append(block)
+    if key == keys.S and not player1_falling_block:
+        drop_block()
         replace_block()
         print("Player 1 tower has {} blocks".format(len(tower1)))
     # When the K key is pressed, add a block for player 2
