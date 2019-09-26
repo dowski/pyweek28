@@ -57,7 +57,7 @@ last_fall_duration = 0.0
 debug = False
 
 def draw():
-    screen.clear()
+    screen.blit('background', (0, 0))
     for block in player1.tower:
         block.draw()
     for block in player2.tower:
