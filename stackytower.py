@@ -22,7 +22,7 @@ player2.tower = []
 def make_inventory(towerx):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
-    inventory = [Actor('cannon'), Actor('small_shield'), Actor('basic')]
+    inventory = [Actor('cannon_icon'), Actor('small_shield'), Actor('basic')]
     inventory[1].pos = (towerx, 50)
     inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
     inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
@@ -34,7 +34,14 @@ player1.inventory = make_inventory(player1.towerx)
 player2.inventory = make_inventory(player2.towerx)
 
 # These are the images of all available blocks.
-picture = ['cannon', 'small_shield', 'basic', 'shotgun', 'large_shield']
+icons = ['cannon_icon', 'small_shield', 'basic', 'shotgun_icon', 'large_shield_icon']
+full_block_map = {
+    'cannon_icon': 'cannon',
+    'small_shield': 'small_shield',
+    'basic': 'basic',
+    'shotgun_icon': 'shotgun',
+    'large_shield_icon': 'large_shield_icon'
+}
 
 # This represents the currently selected block - it will be changed as
 # the player changes block selection.
@@ -78,7 +85,7 @@ def draw():
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
-    new_block_image = random.choice(picture)
+    new_block_image = random.choice(icons)
     new_block = Actor(new_block_image)
     new_block.x = player.towerx
     new_block.y = 50
@@ -89,6 +96,7 @@ def drop_block(player):
     global last_fall_duration
     block = player.inventory[player.selected_block]
     block.x = player.towerx
+    block.image = full_block_map[block.image]
     block.target_y = HEIGHT - len(player.tower) * block.height - block.height // 2
     last_fall_duration = duration = 1.0 * (block.target_y / HEIGHT)
     animate(block, duration=duration, y=block.target_y, tween='bounce_end',
