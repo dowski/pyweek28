@@ -34,10 +34,9 @@ player1.inventory = make_inventory(player1.towerx)
 player2.inventory = make_inventory(player2.towerx)
 
 # These are the images of all available blocks.
-icons = ['cannon_icon', 'small_shield', 'basic', 'shotgun_icon', 'large_shield_icon']
+icons = ['cannon_icon', 'small_shield_icon', 'basic', 'shotgun_icon', ]#'large_shield_icon']
 full_block_map = {
     'cannon_icon': 'cannon',
-    'small_shield': 'small_shield',
     'small_shield_icon': 'small_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
