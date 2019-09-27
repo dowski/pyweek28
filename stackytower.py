@@ -53,14 +53,11 @@ def make_inventory(player):
 player1.inventory = make_inventory(player1)
 player2.inventory = make_inventory(player2)
 
-# These are the images of all available blocks.
-icons = ['cannon_icon', 'basic']
-
 # This dictionary maps icon images to full block images - for some
 # the icon is the full block.
 full_block_map = {
     'cannon_icon': 'cannon',
-    'small_shield_icon': 'small_shield',
+    #'small_shield_icon': 'small_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
@@ -144,7 +141,7 @@ def draw():
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
-    new_block_image = random.choice(icons)
+    new_block_image = random.choice(list(full_block_map))
     new_block = Actor(new_block_image)
     if player.facing_left:
         flip_actor_image(new_block)
