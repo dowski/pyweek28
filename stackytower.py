@@ -149,7 +149,11 @@ def draw():
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
-    new_block_image = random.choice(list(full_block_map))
+    value = random.random()
+    if value > 0.7:
+        new_block_image = random.choice(['shotgun_icon', 'cannon_icon'])
+    else:
+        new_block_image = 'basic'
     new_block = Actor(new_block_image)
     if player.facing_left:
         flip_actor_image(new_block)
