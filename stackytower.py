@@ -74,6 +74,9 @@ selector2 = Actor('selected_block', (player2.towerx, 50))
 player1.falling_block = None
 player2.falling_block = None
 
+# A list of flying cannon balls.
+cannon_balls = []
+
 # Some debugging information - holds the duration that it took the last
 # block to fall.
 last_fall_duration = 0.0
@@ -125,8 +128,11 @@ def draw():
         else:
             winner_name = "Player 2"
         screen.draw.text("{} is the winner!".format(winner_name),
-            center=(WIDTH // 2, HEIGHT // 2), color=(255, 128, 128),
-            fontsize=32)
+                         center=(WIDTH // 2, HEIGHT // 2),
+                         color=(255, 128, 128),
+                         fontsize=32)
+    for cannon_ball in cannon_balls:
+        cannon_ball.draw()
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
@@ -144,7 +150,7 @@ def drop_block(player):
     block.image = full_block_map[block.image]
     if player.facing_left:
         flip_actor_image(block)
-    tower_height = len(player.tower) * BLOCK_HEIGHT
+    tower_height = get_tower_height(player)
     block.target_y = HEIGHT - tower_height - BLOCK_HEIGHT // 2
     last_fall_duration = duration = 1.0 * (block.target_y / HEIGHT)
     animate(block, duration=duration, y=block.target_y, tween='bounce_end',
@@ -156,20 +162,63 @@ def stop_dropping():
     global winner
     if player1.falling_block and (
             player1.falling_block.y == player1.falling_block.target_y):
-        player1.tower.append(player1.falling_block)
-        player1.falling_block = None
-        if is_winner(player1):
-            winner = player1
+        finish_drop(player1)
     if player2.falling_block and (
             player2.falling_block.y == player2.falling_block.target_y):
-        player2.tower.append(player2.falling_block)
-        player2.falling_block = None
-        if is_winner(player2):
-            winner = player2
+        finish_drop(player2)
+
+def finish_drop(player):
+    """Finishes processing the dropped block for the given player.facing_left
+
+    Adds the block to their tower, removes the falling block, etc.
+    """
+    global winner
+    player.tower.append(player.falling_block)
+    if player.falling_block.image == 'cannon':
+        fire_cannon(player, player.falling_block)
+    player.falling_block = None
+    if is_winner(player):
+        winner = player
 
 def is_winner(player):
+    """Returns True if the player has won."""
     return not winner and (
-        HEIGHT - len(player.tower) * BLOCK_HEIGHT < FINISH_LINE)
+        HEIGHT - get_tower_height(player) < FINISH_LINE)
+
+def fire_cannon(player, cannon_block):
+    """Fires a cannon ball for the player out of the cannon_block."""
+    if player is player1:
+        target = player2
+        end_shot_x = WIDTH
+    else:
+        target = player1
+        end_shot_x = 0
+    cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
+    cannon_balls.append(cannon_ball)
+    cannon_ball.target_player = target
+    animate(cannon_ball, x=end_shot_x)
+
+def get_tower_height(player):
+    """Returns the height of the tower in pixels."""
+    return len(player.tower) * BLOCK_HEIGHT
+
+def get_height(y):
+    """Returns y as a height from the bottom of the screen."""
+    return HEIGHT - y
+
+def update():
+    # check flying cannon balls for hits or if they go off screen
+    for ball in list(cannon_balls):
+        if ball.x >= WIDTH or ball.x <= 0:
+            cannon_balls.remove(ball)
+        elif get_tower_height(ball.target_player) >= get_height(ball.y):
+                # the tower is tall enough to be hit - check for hit
+                for block in reversed(ball.target_player.tower):
+                    if block.collidepoint(ball.pos):
+                        cannon_balls.remove(ball)
+                        # TODO: remove/damage this block
+                        # TODO: shift blocks above this one down
+                        break
 
 def on_key_up(key):
     # When the S key is pressed, add a block for player 1
