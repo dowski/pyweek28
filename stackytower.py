@@ -74,8 +74,12 @@ selector2 = Actor('selected_block', (player2.towerx, 50))
 player1.falling_block = None
 player2.falling_block = None
 
-# A list of flying cannon balls.
-cannon_balls = []
+# Cannon balls flying toward a target tower
+shots_fired = []
+
+# Cannon balls that missed their target and will eventually
+# fly off screen.
+shots_missed = []
 
 # Some debugging information - holds the duration that it took the last
 # block to fall.
@@ -131,7 +135,7 @@ def draw():
                          center=(WIDTH // 2, HEIGHT // 2),
                          color=(255, 128, 128),
                          fontsize=32)
-    for cannon_ball in cannon_balls:
+    for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
 
 def replace_block(player):
@@ -194,7 +198,7 @@ def fire_cannon(player, cannon_block):
         target = player1
         end_shot_x = 0
     cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
-    cannon_balls.append(cannon_ball)
+    shots_fired.append(cannon_ball)
     cannon_ball.target_player = target
     animate(cannon_ball, x=end_shot_x)
 
@@ -207,18 +211,39 @@ def get_height(y):
     return HEIGHT - y
 
 def update():
-    # check flying cannon balls for hits or if they go off screen
-    for ball in list(cannon_balls):
+    # check missed shots to see if they go off screen
+    for ball in list(shots_missed):
         if ball.x >= WIDTH or ball.x <= 0:
-            cannon_balls.remove(ball)
-        elif get_tower_height(ball.target_player) >= get_height(ball.y):
-                # the tower is tall enough to be hit - check for hit
-                for block in reversed(ball.target_player.tower):
-                    if block.collidepoint(ball.pos):
-                        cannon_balls.remove(ball)
-                        # TODO: remove/damage this block
-                        # TODO: shift blocks above this one down
-                        break
+            shots_missed.remove(ball)
+    for ball in list(shots_fired):
+        if is_not_close_enough(ball):
+            # ignore for now - ball still flying toward target
+            continue
+        elif is_hit_possible(ball):
+            # the tower is tall enough to be hit - check for hit
+            for block in reversed(ball.target_player.tower):
+                if block.collidepoint(ball.pos):
+                    shots_fired.remove(ball)
+                    # TODO: remove/damage this block
+                    # TODO: shift blocks above this one down
+                    break
+        else:
+            # it's a miss
+            shots_fired.remove(ball)
+            shots_missed.append(ball)
+
+def is_not_close_enough(cannon_ball):
+    """Returns True if the ball hasn't reached the tower yet."""
+    if cannon_ball.target_player is player1:
+        return cannon_ball.x > cannon_ball.target_player.towerx
+    else:
+        return cannon_ball.x < cannon_ball.target_player.towerx
+
+def is_hit_possible(cannon_ball):
+    """Returns True if the ball is near a tower that is tall enough to hit."""
+    target_height = get_tower_height(cannon_ball.target_player)
+    ball_height = get_height(cannon_ball.y)
+    return target_height >= ball_height
 
 def on_key_up(key):
     # When the S key is pressed, add a block for player 1
