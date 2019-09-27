@@ -129,10 +129,14 @@ def draw():
     if player2.falling_block:
         player2.falling_block.draw()
     if debug:
-        screen.draw.text("shots_fired: {}".format(len(shots_fired)), (10, 80))
-        screen.draw.text("shots_missed: {}".format(len(shots_missed)), (10, 100))
-        screen.draw.text("Player 1 tower height: {}".format(len(player1.tower)), (10, 120))
-        screen.draw.text("Player 2 tower height: {}".format(len(player2.tower)), (10, 140))
+        screen.draw.text(
+            "shots_fired: {}".format(len(shots_fired)), (10, 80))
+        screen.draw.text(
+            "shots_missed: {}".format(len(shots_missed)), (10, 100))
+        screen.draw.text(
+            "Player 1 tower height: {}".format(len(player1.tower)), (10, 120))
+        screen.draw.text(
+            "Player 2 tower height: {}".format(len(player2.tower)), (10, 140))
 
     selector1.draw()
     selector2.draw()
@@ -250,7 +254,7 @@ def get_target_player_and_x(attacker, attack):
 def fire_shotgun(player, shotgun):
     target, end_shot_x = get_target_player_and_x(player, shotgun)
     sounds.shotgun_boom.play()
-    for i in range(-1, 2):
+    for i in range(-4, 5, 2):
         shot = Actor('shotgun_shot', pos=shotgun.pos)
         shots_fired.append(shot)
         shot.target_player = target
@@ -319,11 +323,11 @@ def on_key_up(key):
     global debug
     if winner:
         return
-    if key == keys.S and not player1.falling_block and active_player is player1:
+    if key == keys.S and not player1.falling_block and (debug or active_player is player1):
         drop_selected_block(player1)
         replace_block(player1)
     # When the K key is pressed, add a block for player 2
-    elif key == keys.K and not player2.falling_block and active_player is player2:
+    elif key == keys.K and not player2.falling_block and (debug or active_player is player2):
         drop_selected_block(player2)
         replace_block(player2)
 
