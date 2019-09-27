@@ -42,7 +42,7 @@ def make_inventory(player):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
     inventory = [
-        Actor('cannon_icon'), Actor('basic'), Actor('basic')]
+        Actor('basic'), Actor('basic'), Actor('basic')]
     for actor in inventory:
         if player.facing_left:
             flip_actor_image(actor)
@@ -63,7 +63,7 @@ full_block_map = {
     #'small_shield_icon': 'small_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
-    'medkit_icon': 'medkit',
+#    'medkit_icon': 'medkit',
 }
 
 # This dictionary maps block images to their damaged images.
@@ -157,15 +157,20 @@ def replace_block(player):
     new_block.y = 50
     player.inventory[player.selected_block] = new_block
 
-def drop_block(player):
+def drop_selected_block(player):
     """Drops the selected block in the inventory."""
-    block = player.inventory[player.selected_block]
+    block = prepare_for_drop(
+        player, player.inventory[player.selected_block])
+    player.falling_block = block
+    fall_onto_player_tower(block, player)
+
+def prepare_for_drop(player, block):
+    block.damaged = False
     block.x = player.towerx
     block.image = full_block_map[block.image]
     if player.facing_left:
         flip_actor_image(block)
-    player.falling_block = block
-    fall_onto_player_tower(block, player)
+    return block
 
 def fall_onto_player_tower(block, player):
     """Animates the fall of the block onto the player's tower."""
@@ -230,10 +235,11 @@ def get_target_player_and_x(attacker, attack):
 
 def fire_shotgun(player, shotgun):
     target, end_shot_x = get_target_player_and_x(player, shotgun)
-    shot = Actor('shotgun_shot', pos=shotgun.pos)
-    shots_fired.append(shot)
-    shot.target_player = target
-    animate(shot, x=end_shot_x)
+    for i in range(-1, 2):
+        shot = Actor('shotgun_shot', pos=shotgun.pos)
+        shots_fired.append(shot)
+        shot.target_player = target
+        animate(shot, x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
@@ -241,38 +247,42 @@ def get_tower_top_y(player):
 
 def update():
     # check missed shots to see if they go off screen
-    for ball in list(shots_missed):
-        if ball.x >= WIDTH or ball.x <= 0:
-            shots_missed.remove(ball)
-    for ball in list(shots_fired):
-        if is_not_close_enough(ball):
-            # ignore for now - ball still flying toward target
+    for shot in list(shots_missed):
+        if shot.x >= WIDTH or shot.x <= 0:
+            shots_missed.remove(shot)
+    players_with_lost_blocks = set()
+    for shot in list(shots_fired):
+        if is_not_close_enough(shot):
+            # ignore for now - shot still flying toward target
             continue
-        elif is_hit_possible(ball):
+        elif is_hit_possible(shot):
             # the tower is tall enough to be hit - check for hit
-            block_removed = False
-            for block in list(ball.target_player.tower):
-                if not block_removed and block.collidepoint(ball.pos):
-                    shots_fired.remove(ball)
-                    if ball.image == 'cannon_ball':
-                        ball.target_player.tower.remove(block)
-                        block_removed = True
-                    elif ball.image == 'shotgun_shot' and block.image in damaged_block_map:
-                        if 'damaged' in block.image:
-                            ball.target_player.tower.remove(block)
-                            block_removed = True
-                        else:
+            for block in list(shot.target_player.tower):
+                if block.collidepoint(shot.pos):
+                    shots_fired.remove(shot)
+                    if shot.image == 'cannon_ball':
+                        shot.target_player.tower.remove(block)
+                        players_with_lost_blocks.add(shot.target_player)
+                    elif shot.image == 'shotgun_shot':
+                        if block.damaged:
+                            shot.target_player.tower.remove(block)
+                            players_with_lost_blocks.add(shot.target_player)
+                        elif block.image in damaged_block_map:
                             block.image = damaged_block_map[block.image]
-                elif block_removed:
-                    target_y = block.y + block.height
-                    animate(block, y=target_y,
-                            duration=calculate_fall_duration(
-                                block.y, target_y),
-                            tween='bounce_end')
+                            block.damaged = True
         else:
             # it's a miss
-            shots_fired.remove(ball)
-            shots_missed.append(ball)
+            shots_fired.remove(shot)
+            shots_missed.append(shot)
+    for player in players_with_lost_blocks:
+        target_y = HEIGHT - BLOCK_HEIGHT // 2
+        for block in player.tower:
+            if block.y != target_y:
+                animate(block, y=target_y,
+                        duration=calculate_fall_duration(
+                            block.y, target_y),
+                        tween='bounce_end')
+            target_y -= BLOCK_HEIGHT
 
 def is_not_close_enough(cannon_ball):
     """Returns True if the ball hasn't reached the tower yet."""
@@ -298,11 +308,11 @@ def on_key_up(key):
     if winner:
         return
     if key == keys.S and not player1.falling_block:
-        drop_block(player1)
+        drop_selected_block(player1)
         replace_block(player1)
     # When the K key is pressed, add a block for player 2
     elif key == keys.K and not player2.falling_block:
-        drop_block(player2)
+        drop_selected_block(player2)
         replace_block(player2)
 
     elif key == keys.A and player1.selected_block < 2:
@@ -322,6 +332,9 @@ def on_key_up(key):
     elif key == keys.SLASH:
         debug = not debug
 
+    elif debug and key == keys.K_1:
+        test_scenario_1()
+
 def switch_selected_block(player, direction):
     """Given a direction of either 1 or -1, changes the selected block."""
     player.inventory[1].pos = (
@@ -334,3 +347,10 @@ def switch_selected_block(player, direction):
         player.inventory[2].x + (direction * player.inventory[2].width),
         player.inventory[2].y)
     player.selected_block -= direction
+
+def test_scenario_1():
+    player1.tower = []
+    for i in range(10):
+        block = Actor('basic')
+        block.y = get_tower_top_y(player1)
+        player1.tower.append(prepare_for_drop(player1, block))
