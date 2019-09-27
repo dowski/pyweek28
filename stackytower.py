@@ -33,21 +33,25 @@ player2.facing_left = True
 # in the lists.
 player1.tower = []
 player2.tower = []
-
-def make_inventory(towerx):
+def flip_actor_image(actor):
+    actor._surf = pygame.transform.flip(actor._orig_surf, True, False)
+def make_inventory(player):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
     inventory = [
         Actor('cannon_icon'), Actor('small_shield_icon'), Actor('basic')]
-    inventory[1].pos = (towerx, 50)
+    for actor in inventory:
+        if player.facing_left:
+            flip_actor_image(actor)
+    inventory[1].pos = (player.towerx, 50)
     inventory[0].pos = (inventory[1].x - inventory[1].width, inventory[1].y)
     inventory[2].pos = (inventory[1].x + inventory[1].width, inventory[1].y)
     return inventory
 
 # These are the starting block inventories for both players. These blocks may
 # be dropped onto their towers.
-player1.inventory = make_inventory(player1.towerx)
-player2.inventory = make_inventory(player2.towerx)
+player1.inventory = make_inventory(player1)
+player2.inventory = make_inventory(player2)
 
 # These are the images of all available blocks.
 icons = ['cannon_icon', 'small_shield_icon', 'basic', 'shotgun_icon']
@@ -142,6 +146,8 @@ def replace_block(player):
     """Replaces the previously selected block with a new random block."""
     new_block_image = random.choice(icons)
     new_block = Actor(new_block_image)
+    if player.facing_left:
+        flip_actor_image(new_block)
     new_block.x = player.towerx
     new_block.y = 50
     player.inventory[player.selected_block] = new_block
@@ -289,6 +295,3 @@ def switch_selected_block(player, direction):
         player.inventory[2].x + (direction * player.inventory[2].width),
         player.inventory[2].y)
     player.selected_block -= direction
-
-def flip_actor_image(actor):
-    actor._surf = pygame.transform.flip(actor._orig_surf, True, False)
