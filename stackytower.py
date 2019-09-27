@@ -94,6 +94,8 @@ shots_missed = []
 # In the game, press / to show debug info
 debug = False
 
+active_player = player1
+
 # The winner of the game
 winner = None
 
@@ -208,7 +210,7 @@ def finish_drop(player):
 
     Adds the block to their tower, removes the falling block, etc.
     """
-    global winner
+    global winner, active_player
     player.tower.append(player.falling_block)
     if player.falling_block.image == 'cannon':
         fire_cannon(player, player.falling_block)
@@ -217,6 +219,10 @@ def finish_drop(player):
     player.falling_block = None
     if is_winner(player):
         winner = player
+    if active_player is player1:
+        active_player = player2
+    else:
+        active_player = player1
 
 def is_winner(player):
     """Returns True if the player has won."""
@@ -307,11 +313,11 @@ def on_key_up(key):
     global debug
     if winner:
         return
-    if key == keys.S and not player1.falling_block:
+    if key == keys.S and not player1.falling_block and active_player is player1:
         drop_selected_block(player1)
         replace_block(player1)
     # When the K key is pressed, add a block for player 2
-    elif key == keys.K and not player2.falling_block:
+    elif key == keys.K and not player2.falling_block and active_player is player2:
         drop_selected_block(player2)
         replace_block(player2)
 
