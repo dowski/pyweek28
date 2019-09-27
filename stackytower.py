@@ -152,8 +152,8 @@ def drop_block(player):
         flip_actor_image(block)
     tower_height = get_tower_height(player)
     block.target_y = HEIGHT - tower_height - BLOCK_HEIGHT // 2
-    last_fall_duration = duration = 1.0 * (block.target_y / HEIGHT)
-    animate(block, duration=duration, y=block.target_y, tween='bounce_end',
+    last_fall_duration = duration = 0.5 * (block.target_y / HEIGHT)
+    animate(block, duration=duration, y=block.target_y,
             on_finished=stop_dropping)
     player.falling_block = block
 
