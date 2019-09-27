@@ -33,8 +33,11 @@ player2.facing_left = True
 # in the lists.
 player1.tower = []
 player2.tower = []
+
 def flip_actor_image(actor):
+    """This is a hack to flip actor images."""
     actor._surf = pygame.transform.flip(actor._orig_surf, True, False)
+
 def make_inventory(player):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
@@ -61,6 +64,11 @@ full_block_map = {
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
+}
+
+# This dictionary maps block images to their damaged images.
+damaged_block_map = {
+    'basic': 'basic_damaged',
 }
 
 # This represents the currently selected block - it will be changed as
@@ -195,6 +203,8 @@ def finish_drop(player):
     player.tower.append(player.falling_block)
     if player.falling_block.image == 'cannon':
         fire_cannon(player, player.falling_block)
+    elif player.falling_block.image == 'shotgun':
+        fire_shotgun(player, player.falling_block)
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -207,15 +217,23 @@ def is_winner(player):
 def fire_cannon(player, cannon_block):
     """Fires a cannon ball for the player out of the cannon_block."""
     cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
-    if player is player1:
-        target = player2
-        end_shot_x = WIDTH + cannon_ball.width
-    else:
-        target = player1
-        end_shot_x = -cannon_ball.width
+    target, end_shot_x = get_target_player_and_x(player, cannon_block)
     shots_fired.append(cannon_ball)
     cannon_ball.target_player = target
     animate(cannon_ball, x=end_shot_x)
+
+def get_target_player_and_x(attacker, attack):
+    if attacker is player1:
+        return player2, WIDTH + attack.width
+    else:
+        return player1, -attack.width
+
+def fire_shotgun(player, shotgun):
+    target, end_shot_x = get_target_player_and_x(player, shotgun)
+    shot = Actor('shotgun_shot', pos=shotgun.pos)
+    shots_fired.append(shot)
+    shot.target_player = target
+    animate(shot, x=end_shot_x)
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
@@ -236,8 +254,15 @@ def update():
             for block in list(ball.target_player.tower):
                 if not block_removed and block.collidepoint(ball.pos):
                     shots_fired.remove(ball)
-                    ball.target_player.tower.remove(block)
-                    block_removed = True
+                    if ball.image == 'cannon_ball':
+                        ball.target_player.tower.remove(block)
+                        block_removed = True
+                    elif ball.image == 'shotgun_shot' and block.image in damaged_block_map:
+                        if 'damaged' in block.image:
+                            ball.target_player.tower.remove(block)
+                            block_removed = True
+                        else:
+                            block.image = damaged_block_map[block.image]
                 elif block_removed:
                     target_y = block.y + block.height
                     animate(block, y=target_y,
