@@ -73,6 +73,7 @@ damaged_block_map = {
     'shotgun': 'shotgun_damaged',
     'medkit_icon': 'medkit_icon_damaged',
 }
+healed_block_map = dict((value, key) for key, value in damaged_block_map.items())
 
 # This represents the currently selected block - it will be changed as
 # the player changes block selection.
@@ -101,6 +102,8 @@ active_player = player1
 
 # The winner of the game
 winner = None
+
+medkit_heals = []
 
 def draw():
     screen.blit('background', (0, 0))
@@ -151,6 +154,8 @@ def draw():
                          fontsize=32)
     for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
+    for medkit_heal in medkit_heals:
+        medkit_heal.draw()
 
 def debug_text(msg, y, *args):
     screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
@@ -222,6 +227,8 @@ def finish_drop(player):
         fire_cannon(player, player.falling_block)
     elif player.falling_block.image == 'shotgun':
         fire_shotgun(player, player.falling_block)
+    elif player.falling_block.image == 'medkit':
+        heal_tower(player, player.falling_block)
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -258,6 +265,20 @@ def fire_shotgun(player, shotgun):
         shots_fired.append(shot)
         shot.target_player = target
         animate(shot, duration=random.uniform(0.4, 0.5), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
+
+def heal_tower(player, medkit):
+    medkit_heal = Actor('medkit_heal', pos=medkit.pos)
+    medkit_heals.append(medkit_heal)
+    target_y = medkit.y + BLOCK_HEIGHT * 3
+    medkit_heal.target_y = target_y
+    medkit_heal.medkit = medkit
+    animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
+
+def cleanup_medkits():
+    for medkit_heal in list(medkit_heals):
+        if medkit_heal.y == medkit_heal.target_y:
+            medkit_heals.remove(medkit_heal)
+            medkit_heal.medkit.image = 'medkit_icon'
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
@@ -300,6 +321,15 @@ def update():
                             block.y, target_y),
                         tween='bounce_end')
             target_y -= BLOCK_HEIGHT
+    for medkit_heal in medkit_heals:
+        for player in [player1, player2]:
+            for block in player.tower:
+                if block.collidepoint(medkit_heal.pos):
+                    if block.damaged:
+                        block.image = healed_block_map[block.image]
+                        if player.facing_left:
+                            flip_actor_image(block)
+                    block.damaged = False
 
 def is_not_close_enough(cannon_ball):
     """Returns True if the ball hasn't reached the tower yet."""
