@@ -239,7 +239,7 @@ def fire_shotgun(player, shotgun):
         shot = Actor('shotgun_shot', pos=shotgun.pos)
         shots_fired.append(shot)
         shot.target_player = target
-        animate(shot, duration=random.uniform(0.2, 0.4), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
+        animate(shot, duration=random.uniform(0.4, 0.5), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
@@ -260,16 +260,12 @@ def update():
             for block in list(shot.target_player.tower):
                 if block.collidepoint(shot.pos):
                     shots_fired.remove(shot)
-                    if shot.image == 'cannon_ball':
+                    if shot.image == 'cannon_ball' or block.damaged:
                         shot.target_player.tower.remove(block)
                         players_with_lost_blocks.add(shot.target_player)
-                    elif shot.image == 'shotgun_shot':
-                        if block.damaged:
-                            shot.target_player.tower.remove(block)
-                            players_with_lost_blocks.add(shot.target_player)
-                        elif block.image in damaged_block_map:
-                            block.image = damaged_block_map[block.image]
-                            block.damaged = True
+                    elif shot.image == 'shotgun_shot' and block.image in damaged_block_map:
+                        block.image = damaged_block_map[block.image]
+                        block.damaged = True
         else:
             # it's a miss
             shots_fired.remove(shot)
