@@ -239,7 +239,7 @@ def fire_shotgun(player, shotgun):
         shot = Actor('shotgun_shot', pos=shotgun.pos)
         shots_fired.append(shot)
         shot.target_player = target
-        animate(shot, x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
+        animate(shot, duration=random.uniform(0.2, 0.4), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
