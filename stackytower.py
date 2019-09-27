@@ -129,14 +129,10 @@ def draw():
     if player2.falling_block:
         player2.falling_block.draw()
     if debug:
-        screen.draw.text(
-            "shots_fired: {}".format(len(shots_fired)), (10, 80))
-        screen.draw.text(
-            "shots_missed: {}".format(len(shots_missed)), (10, 100))
-        screen.draw.text(
-            "Player 1 tower height: {}".format(len(player1.tower)), (10, 120))
-        screen.draw.text(
-            "Player 2 tower height: {}".format(len(player2.tower)), (10, 140))
+        debug_text("shots_fired: {}", 80, len(shots_fired))
+        debug_text("shots_missed: {}", 100, len(shots_missed))
+        debug_text("Player 1 tower height: {}", 120, len(player1.tower))
+        debug_text("Player 2 tower height: {}", 140, len(player2.tower))
 
     selector1.draw()
     selector2.draw()
@@ -155,6 +151,9 @@ def draw():
                          fontsize=32)
     for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
+
+def debug_text(msg, y, *args):
+    screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
