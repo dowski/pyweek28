@@ -63,6 +63,7 @@ full_block_map = {
     'small_shield_icon': 'small_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
+    'medkit_icon': 'medkit',
 }
 
 # This represents the currently selected block - it will be changed as
