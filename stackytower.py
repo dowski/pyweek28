@@ -39,7 +39,7 @@ def make_inventory(player):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
     inventory = [
-        Actor('cannon_icon'), Actor('small_shield_icon'), Actor('basic')]
+        Actor('cannon_icon'), Actor('basic'), Actor('basic')]
     for actor in inventory:
         if player.facing_left:
             flip_actor_image(actor)
@@ -54,7 +54,7 @@ player1.inventory = make_inventory(player1)
 player2.inventory = make_inventory(player2)
 
 # These are the images of all available blocks.
-icons = ['cannon_icon', 'small_shield_icon', 'basic', 'shotgun_icon']
+icons = ['cannon_icon', 'basic']
 
 # This dictionary maps icon images to full block images - for some
 # the icon is the full block.
@@ -85,10 +85,6 @@ shots_fired = []
 # Cannon balls that missed their target and will eventually
 # fly off screen.
 shots_missed = []
-
-# Some debugging information - holds the duration that it took the last
-# block to fall.
-last_fall_duration = 0.0
 
 # In the game, press / to show debug info
 debug = False
@@ -123,8 +119,11 @@ def draw():
     if player2.falling_block:
         player2.falling_block.draw()
     if debug:
-        screen.draw.text("last_fall_duration: {}".format(
-            last_fall_duration), (10, 80))
+        screen.draw.text("shots_fired: {}".format(len(shots_fired)), (10, 80))
+        screen.draw.text("shots_missed: {}".format(len(shots_missed)), (10, 100))
+        screen.draw.text("Player 1 tower height: {}".format(len(player1.tower)), (10, 120))
+        screen.draw.text("Player 2 tower height: {}".format(len(player2.tower)), (10, 140))
+
     selector1.draw()
     selector2.draw()
     # draw the finish line
@@ -154,29 +153,41 @@ def replace_block(player):
     player.inventory[player.selected_block] = new_block
 
 def drop_block(player):
-    """Animates the dropping action of the selected block."""
-    global last_fall_duration
+    """Drops the selected block in the inventory."""
     block = player.inventory[player.selected_block]
     block.x = player.towerx
     block.image = full_block_map[block.image]
     if player.facing_left:
         flip_actor_image(block)
-    tower_height = get_tower_height(player)
-    block.target_y = HEIGHT - tower_height - BLOCK_HEIGHT // 2
-    last_fall_duration = duration = 0.5 * (block.target_y / HEIGHT)
-    animate(block, duration=duration, y=block.target_y,
-            on_finished=stop_dropping)
     player.falling_block = block
+    fall_onto_player_tower(block, player)
 
-def stop_dropping():
-    """Adds the block that just fell to the tower."""
-    global winner
-    if player1.falling_block and (
-            player1.falling_block.y == player1.falling_block.target_y):
-        finish_drop(player1)
-    if player2.falling_block and (
-            player2.falling_block.y == player2.falling_block.target_y):
-        finish_drop(player2)
+def fall_onto_player_tower(block, player):
+    """Animates the fall of the block onto the player's tower."""
+    block.target_y = get_tower_top_y(player)
+    duration = calculate_fall_duration(block.y, block.target_y)
+    animate(block, duration=duration, y=block.target_y,
+            on_finished=resolve_drop)
+
+def calculate_fall_duration(start_y, end_y):
+    """Returns the length of time in seconds that it should take
+    to fall from start_y to end_y."""
+    return 0.8 * ((end_y - start_y) / HEIGHT)
+
+def resolve_drop():
+    """Finishes the drop if block lands on tower, or makes it keep falling"""
+    for player in [player1, player2]:
+        if player.falling_block and (
+                player.falling_block.y == player.falling_block.target_y):
+            # this is how far the block was supposed to fall
+            # now see if it's actually on the tower (or maybe the tower
+            # height changed while it was falling and it needs to fall more)
+            if player.falling_block.y == get_tower_top_y(player):
+                # it's on the top of the tower
+                finish_drop(player)
+            else:
+                # the tower height must have changed - keep falling
+                fall_onto_player_tower(player.falling_block, player)
 
 def finish_drop(player):
     """Finishes processing the dropped block for the given player.facing_left
@@ -194,28 +205,24 @@ def finish_drop(player):
 def is_winner(player):
     """Returns True if the player has won."""
     return not winner and (
-        HEIGHT - get_tower_height(player) < FINISH_LINE)
+        get_tower_top_y(player) < FINISH_LINE - BLOCK_HEIGHT // 2)
 
 def fire_cannon(player, cannon_block):
     """Fires a cannon ball for the player out of the cannon_block."""
+    cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
     if player is player1:
         target = player2
-        end_shot_x = WIDTH
+        end_shot_x = WIDTH + cannon_ball.width
     else:
         target = player1
-        end_shot_x = 0
-    cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
+        end_shot_x = -cannon_ball.width
     shots_fired.append(cannon_ball)
     cannon_ball.target_player = target
     animate(cannon_ball, x=end_shot_x)
 
-def get_tower_height(player):
-    """Returns the height of the tower in pixels."""
-    return len(player.tower) * BLOCK_HEIGHT
-
-def get_height(y):
-    """Returns y as a height from the bottom of the screen."""
-    return HEIGHT - y
+def get_tower_top_y(player):
+    """Returns the y coordinate of the top of the tower."""
+    return HEIGHT - len(player.tower) * BLOCK_HEIGHT - BLOCK_HEIGHT // 2
 
 def update():
     # check missed shots to see if they go off screen
@@ -228,12 +235,18 @@ def update():
             continue
         elif is_hit_possible(ball):
             # the tower is tall enough to be hit - check for hit
-            for block in reversed(ball.target_player.tower):
-                if block.collidepoint(ball.pos):
+            block_removed = False
+            for block in list(ball.target_player.tower):
+                if not block_removed and block.collidepoint(ball.pos):
                     shots_fired.remove(ball)
-                    # TODO: remove/damage this block
-                    # TODO: shift blocks above this one down
-                    break
+                    ball.target_player.tower.remove(block)
+                    block_removed = True
+                elif block_removed:
+                    target_y = block.y + block.height
+                    animate(block, y=target_y,
+                            duration=calculate_fall_duration(
+                                block.y, target_y),
+                            tween='bounce_end')
         else:
             # it's a miss
             shots_fired.remove(ball)
@@ -248,9 +261,14 @@ def is_not_close_enough(cannon_ball):
 
 def is_hit_possible(cannon_ball):
     """Returns True if the ball is near a tower that is tall enough to hit."""
-    target_height = get_tower_height(cannon_ball.target_player)
-    ball_height = get_height(cannon_ball.y)
-    return target_height >= ball_height
+    target_top_y = get_tower_top_y(cannon_ball.target_player)
+    if debug:
+        print("target_top_y: {}, cannon_ball.y: {}"
+            .format(target_top_y, cannon_ball.y))
+    tower_left_x = cannon_ball.target_player.towerx - BLOCK_HEIGHT // 2
+    tower_right_x = cannon_ball.target_player.towerx + BLOCK_HEIGHT // 2
+    return (target_top_y <= cannon_ball.y
+        and tower_left_x <= cannon_ball.x <= tower_right_x)
 
 def on_key_up(key):
     # When the S key is pressed, add a block for player 1
@@ -260,12 +278,10 @@ def on_key_up(key):
     if key == keys.S and not player1.falling_block:
         drop_block(player1)
         replace_block(player1)
-        print("Player 1 tower has {} blocks".format(len(player1.tower)))
     # When the K key is pressed, add a block for player 2
     elif key == keys.K and not player2.falling_block:
         drop_block(player2)
         replace_block(player2)
-        print("Player 2 tower has {} blocks".format(len(player2.tower)))
 
     elif key == keys.A and player1.selected_block < 2:
         # Move player1 selected block left
