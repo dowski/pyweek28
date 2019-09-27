@@ -63,7 +63,7 @@ full_block_map = {
     'large_shield_icon': 'large_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
-#    'medkit_icon': 'medkit',
+    'medkit_icon': 'medkit',
 }
 
 # This dictionary maps block images to their damaged images.
@@ -159,8 +159,8 @@ def draw():
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
     value = random.random()
-    if value > 0.7:
-        new_block_image = random.choice(['shotgun_icon', 'cannon_icon'])
+    if value > 0.5:
+        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'medkit_icon'])
     else:
         new_block_image = 'basic'
     new_block = Actor(new_block_image)
@@ -285,6 +285,8 @@ def update():
                     elif shot.image == 'shotgun_shot' and block.image in damaged_block_map:
                         sounds.block_damage.play()
                         block.image = damaged_block_map[block.image]
+                        if shot.target_player.facing_left:
+                            flip_actor_image(block)
                         block.damaged = True
         else:
             # it's a miss
