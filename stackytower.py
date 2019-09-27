@@ -60,7 +60,7 @@ player2.inventory = make_inventory(player2)
 # the icon is the full block.
 full_block_map = {
     'cannon_icon': 'cannon',
-    #'small_shield_icon': 'small_shield',
+    'large_shield_icon': 'large_shield',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
@@ -69,6 +69,9 @@ full_block_map = {
 # This dictionary maps block images to their damaged images.
 damaged_block_map = {
     'basic': 'basic_damaged',
+    'cannon': 'cannon_damaged',
+    'shotgun': 'shotgun_damaged',
+    'medkit_icon': 'medkit_icon_damaged',
 }
 
 # This represents the currently selected block - it will be changed as
@@ -217,6 +220,7 @@ def is_winner(player):
 def fire_cannon(player, cannon_block):
     """Fires a cannon ball for the player out of the cannon_block."""
     cannon_ball = Actor('cannon_ball', pos=cannon_block.pos)
+    sounds.cannon_boom.play()
     target, end_shot_x = get_target_player_and_x(player, cannon_block)
     shots_fired.append(cannon_ball)
     cannon_ball.target_player = target
@@ -231,6 +235,7 @@ def get_target_player_and_x(attacker, attack):
 def fire_shotgun(player, shotgun):
     target, end_shot_x = get_target_player_and_x(player, shotgun)
     shot = Actor('shotgun_shot', pos=shotgun.pos)
+    sounds.shotgun_boom.play()
     shots_fired.append(shot)
     shot.target_player = target
     animate(shot, x=end_shot_x)
@@ -258,6 +263,7 @@ def update():
                         ball.target_player.tower.remove(block)
                         block_removed = True
                     elif ball.image == 'shotgun_shot' and block.image in damaged_block_map:
+                        sounds.block_damage.play()
                         if 'damaged' in block.image:
                             ball.target_player.tower.remove(block)
                             block_removed = True
