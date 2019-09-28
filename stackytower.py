@@ -110,7 +110,14 @@ shots_missed = []
 # In the game, press / to show debug info
 debug = False
 
-show_instructions = True
+show_menu = True
+show_instructions = False
+menu_options = [
+    "How to play",
+    "1 player",
+    "2 players",
+]
+selected_option = 0
 
 active_player = player1
 active_player_marker = Actor('active_player')
@@ -182,8 +189,8 @@ def draw():
         medkit_heal.draw()
     for small_shield in player1.shields + player2.shields:
         small_shield.draw()
-    if show_instructions:
-        draw_instructions()
+    if show_menu:
+        draw_menu()
 
 def debug_text(msg, y, *args):
     screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
@@ -278,13 +285,19 @@ def finish_drop(player):
 def do_ai_move():
     """Selects a random block from the inventory."""
     if active_player is player2 and player2.is_ai:
-        random_move = random.choice([keys.J, keys.L])
-        on_key_up(random_move)
+        new_block = random.randint(0,2)
+        difference = abs(new_block - player2.selected_block)
+        for i in range(difference):
+            if new_block > player2.selected_block:
+                switch_selected_block(player2, -1)
+            elif new_block < player2.selected_block:
+                switch_selected_block(player2, 1)
         clock.schedule(drop_ai_block, 0.1)
 
 def drop_ai_block():
     """Triggers a block drop for the AI."""
-    on_key_up(keys.K)
+    drop_selected_block(player2)
+    replace_block(player2)
 
 def is_winner(player):
     """Returns True if the player has won."""
@@ -392,8 +405,7 @@ def update():
         for player in [player1, player2]:
             for small_shield in list(player.shields):
                 if small_shield.collidepoint(shot.pos):
-                    if shot in shots_fired:
-                        shots_fired.remove(shot)
+                    shots_fired.remove(shot)
                     if shot.image == 'cannon_ball' or small_shield.damaged:
                         player.shields.remove(small_shield)
                     else:
@@ -441,22 +453,40 @@ def is_hit_possible(cannon_ball):
     return (target_top_y <= cannon_ball.y
         and tower_left_x <= cannon_ball.x <= tower_right_x)
 
-def on_key_up(key):
-    # When the S key is pressed, add a block for player 1
-    global debug, show_instructions
+def on_key_down(key):
+    global debug, show_menu, selected_option, show_instructions
     if winner:
         return
-    elif key == keys.H:
-        show_instructions = not show_instructions
     if show_instructions:
-        if key == keys.K_1:
-            player2.is_ai = True
+        show_instructions = False
         return
+    if show_menu:
+        if key == keys.RETURN:
+            if selected_option == 1:
+                player2.is_ai = True
+                show_menu = False
+            elif selected_option == 0:
+                show_instructions = True
+            else:
+                show_menu = False
+        elif key == keys.DOWN:
+            selected_option += 1
+            if selected_option > 2:
+                selected_option = 0
+        elif key == keys.UP:
+            selected_option -= 1
+            if selected_option < 0:
+                selected_option = 2
+        return
+    # When the S key is pressed, add a block for player 1
     if key == keys.S and not player1.falling_block and (debug or active_player is player1):
         drop_selected_block(player1)
         replace_block(player1)
     # When the K key is pressed, add a block for player 2
-    elif key == keys.K and not player2.falling_block and (debug or active_player is player2):
+    elif key == keys.K \
+            and not player2.falling_block \
+            and not player2.is_ai \
+            and (debug or active_player is player2):
         drop_selected_block(player2)
         replace_block(player2)
 
@@ -467,10 +497,10 @@ def on_key_up(key):
         # Move player1 selected block right
         switch_selected_block(player1, 1)
 
-    elif key == keys.J and player2.selected_block < 2:
+    elif key == keys.J and not player2.is_ai and player2.selected_block < 2:
         # Move player2 selected block left
         switch_selected_block(player2, -1)
-    elif key == keys.L and player2.selected_block > 0:
+    elif key == keys.L and not player2.is_ai and player2.selected_block > 0:
         # Move player1 selected block right
         switch_selected_block(player2, 1)
 
@@ -493,41 +523,60 @@ def switch_selected_block(player, direction):
         player.inventory[2].y)
     player.selected_block -= direction
 
-def draw_instructions():
-    box_top = HEIGHT // 4
+def draw_menu():
+    box_top = HEIGHT // 4 * .7
     box_left = WIDTH // 4
     title_top = box_top + 10
-    instructions_top = title_top + 40
-    instructions_left = box_left + 10
     screen.draw.filled_rect(Rect(
             (box_left, box_top),
-            (WIDTH - WIDTH // 2, HEIGHT * .65)),
+            (WIDTH - WIDTH // 2, HEIGHT * .70)),
         (0, 0, 0))
     screen.draw.text("STACKY TOWER",
         centerx=WIDTH // 2,
         centery=title_top + 20,
         fontname="1980xx",
         fontsize=32)
+    if show_instructions:
+        draw_instructions(title_top + 40, box_left + 10)
+        return
+    for i, text in enumerate(menu_options):
+        if i == selected_option:
+            color = (255, 0, 0)
+        else:
+            color = (255, 255, 255)
+        screen.draw.text(text,
+            centerx=WIDTH // 2,
+            centery=title_top + i * 30 + 80,
+            fontname="1980xx", color=color, fontsize=28)
+    screen.draw.text("(Up/Down to change\nEnter to select)",
+        centerx=WIDTH // 2, centery=title_top + i * 30 + 180,
+        fontname="1980xx", color=(0, 255, 0))
+
+def draw_instructions(top, left):
     instructions = """\
-Player 1
+Left player
   Slide Block Left: A
   Slide Block Right: D
   Drop Selected Block: S
 
-Player 2
+Right player
   Slide Block Left: J
   Slide Block Right: L
   Drop Selected Block: K
 
-Player 1 goes first!
-Have fun!
+Left player goes first.
+Use attacks to destroy
+opponent tower.
 
-Press H to close these
-instructions (or see them
-again later).
+Place shields to defend
+and heal blocks with
+medkits.
     """
-    screen.draw.text(instructions, topleft=(instructions_left, instructions_top),
-    fontname="1980xx")
+    screen.draw.text(instructions, topleft=(left, top),
+        fontname="1980xx")
+    screen.draw.text("(Press any key to continue)",
+        centerx=WIDTH // 2, centery=550,
+        fontname="1980xx", color=(0, 255, 0))
 
 def test_scenario_1():
     player1.tower = []
