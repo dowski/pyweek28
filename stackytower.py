@@ -194,7 +194,7 @@ def draw():
         draw_menu()
 
 def debug_text(msg, y, *args):
-    screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
+    screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0), fontname="1980xx")
 
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
