@@ -13,7 +13,10 @@ BLOCK_HEIGHT = 32
 # The y coordinate on the screen where the finish line should be
 FINISH_LINE = 128
 
+# Various attributes are set on each Player during game setup and
+# they are updated as the game progresses.
 class Player:
+    """Just a namespace for storing global state about players"""
     pass
 
 player1 = Player()
@@ -35,7 +38,10 @@ player1.tower = []
 player2.tower = []
 
 def flip_actor_image(actor):
-    """This is a hack to flip actor images."""
+    """This is a hack to flip actor images.
+
+    Only works with the version of PyGame Zero bundled with Mu.
+    """
     actor._surf = pygame.transform.flip(actor._orig_surf, True, False)
 
 def make_inventory(player):
@@ -56,8 +62,8 @@ def make_inventory(player):
 player1.inventory = make_inventory(player1)
 player2.inventory = make_inventory(player2)
 
-# This dictionary maps icon images to full block images - for some
-# the icon is the full block.
+# This dictionary maps icon images to full block images, used when blocks are
+# dropped from the inventory.
 full_block_map = {
     'cannon_icon': 'cannon',
     'small_shield_icon': 'small_shield_icon',
@@ -74,6 +80,7 @@ damaged_block_map = {
     'medkit_icon': 'medkit_icon_damaged',
     'small_shield_icon': 'small_shield_icon_damaged',
 }
+# This dictionary maps damaged blocks back to their original values (when healed).
 healed_block_map = dict((value, key) for key, value in damaged_block_map.items())
 
 # This represents the currently selected block - it will be changed as
@@ -88,8 +95,11 @@ selector2 = Actor('selected_block', (player2.towerx, 50))
 # When player 1 drops a block, this variable will hold its Actor.
 player1.falling_block = None
 player2.falling_block = None
+
+# Each player may have shields protecting their towers.
 player1.shields = []
 player2.shields = []
+
 # Cannon balls flying toward a target tower
 shots_fired = []
 
@@ -110,8 +120,12 @@ active_player_marker.y = 20
 # The winner of the game
 winner = None
 
+# When medkits are dropped, their healing power drifts down the tower.
+# Each medkit creates an Actor and adds it here.
 medkit_heals = []
 
+# This flag controls the 1-player version of the game. If this flag is
+# True then player 2 is controlled by an "AI".
 player2.is_ai = False
 
 def draw():
@@ -216,7 +230,10 @@ def calculate_fall_duration(start_y, end_y):
     return 0.8 * ((end_y - start_y) / HEIGHT)
 
 def resolve_drop():
-    """Finishes the drop if block lands on tower, or makes it keep falling"""
+    """Finishes the drop if block lands on tower, or makes it keep falling.
+
+    This is needed because the tower height might have changed since the block
+    was originally dropped."""
     for player in [player1, player2]:
         if player.falling_block and (
                 player.falling_block.y == player.falling_block.target_y):
@@ -234,6 +251,8 @@ def finish_drop(player):
     """Finishes processing the dropped block for the given player.facing_left
 
     Adds the block to their tower, removes the falling block, etc.
+
+    Also triggers special actions for certain blocks.
     """
     global winner, active_player
     player.tower.append(player.falling_block)
@@ -257,12 +276,14 @@ def finish_drop(player):
     animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate', on_finished=do_ai_move)
 
 def do_ai_move():
+    """Selects a random block from the inventory."""
     if active_player is player2 and player2.is_ai:
         random_move = random.choice([keys.J, keys.L])
         on_key_up(random_move)
         clock.schedule(drop_ai_block, 0.1)
 
 def drop_ai_block():
+    """Triggers a block drop for the AI."""
     on_key_up(keys.K)
 
 def is_winner(player):
@@ -286,6 +307,10 @@ def get_target_player_and_x(attacker, attack):
         return player1, -attack.width
 
 def fire_shotgun(player, shotgun):
+    """Fires a shotgun blast for the player.
+
+    The variable passed as shotgun should be a block.
+    """
     target, end_shot_x = get_target_player_and_x(player, shotgun)
     sounds.shotgun_boom.play()
     for i in range(-4, 5, 2):
@@ -300,6 +325,7 @@ def fire_shotgun(player, shotgun):
         animate(shot, duration=random.uniform(0.4, 0.5), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
 
 def heal_tower(player, medkit):
+    """Triggers a medkit heal action that drifts down the tower."""
     medkit_heal = Actor('medkit_heal', pos=medkit.pos)
     sounds.heal.play()
     medkit_heals.append(medkit_heal)
@@ -309,6 +335,7 @@ def heal_tower(player, medkit):
     animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
 
 def make_small_shield(player, small_shield_icon):
+    """Puts a small shield on the tower near small_shield_icon."""
     small_shield = Actor('small_shield', pos=small_shield_icon.pos)
     if player.facing_left:
             flip_actor_image(small_shield)
@@ -317,6 +344,7 @@ def make_small_shield(player, small_shield_icon):
     small_shield.damaged = False
 
 def cleanup_medkits():
+    """Cleans up medkit heal actions that have completed."""
     for medkit_heal in list(medkit_heals):
         if medkit_heal.y == medkit_heal.target_y:
             medkit_heals.remove(medkit_heal)
@@ -332,6 +360,8 @@ def update():
     for shot in list(shots_missed):
         if shot.x >= WIDTH or shot.x <= 0:
             shots_missed.remove(shot)
+
+    # Handles all shotgun and cannon hits against towers.
     players_with_lost_blocks = set()
     for shot in list(shots_fired):
         if is_not_close_enough(shot):
@@ -355,6 +385,8 @@ def update():
             # it's a miss
             shots_fired.remove(shot)
             shots_missed.append(shot)
+    # Handles all shotgun and cannon shots against shields
+    # TODO: roll this into general shot handling above
     for shot in list(shots_fired):
         for player in [player1, player2]:
             for small_shield in list(player.shields):
@@ -368,7 +400,7 @@ def update():
                         small_shield.image = 'small_shield_damaged'
                         if shot.target_player.facing_left:
                             flip_actor_image(small_shield)
-
+    # Cause blocks to fall if ones below them were destroyed.
     for player in players_with_lost_blocks:
         target_y = HEIGHT - BLOCK_HEIGHT // 2
         for block in player.tower:
@@ -378,6 +410,7 @@ def update():
                             block.y, target_y),
                         tween='bounce_end')
             target_y -= BLOCK_HEIGHT
+    # Perform healing actions as medkit heal actions move down the tower.
     for medkit_heal in medkit_heals:
         for player in [player1, player2]:
             for block in player.tower:
