@@ -103,6 +103,9 @@ debug = False
 show_instructions = True
 
 active_player = player1
+active_player_marker = Actor('active_player')
+active_player_marker.x = player1.towerx
+active_player_marker.y = 20
 
 # The winner of the game
 winner = None
@@ -111,6 +114,7 @@ medkit_heals = []
 
 def draw():
     screen.blit('background', (0, 0))
+    active_player_marker.draw()
     draw_later = []
     for block in player1.tower:
         if block.image == 'small_shield':
@@ -246,6 +250,7 @@ def finish_drop(player):
         active_player = player2
     else:
         active_player = player1
+    animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate')
 
 def is_winner(player):
     """Returns True if the player has won."""
@@ -284,6 +289,7 @@ def heal_tower(player, medkit):
     medkit_heal.target_y = target_y
     medkit_heal.medkit = medkit
     animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
+
 def make_small_shield(player, small_shield_icon):
     small_shield = Actor('small_shield', pos=small_shield_icon.pos)
     if player.facing_left:
@@ -291,7 +297,6 @@ def make_small_shield(player, small_shield_icon):
     sounds.small_shield_on.play()
     player.shields.append(small_shield)
     small_shield.damaged = False
-
 
 def cleanup_medkits():
     for medkit_heal in list(medkit_heals):
