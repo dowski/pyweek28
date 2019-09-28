@@ -112,6 +112,8 @@ winner = None
 
 medkit_heals = []
 
+player2.is_ai = False
+
 def draw():
     screen.blit('background', (0, 0))
     active_player_marker.draw()
@@ -250,7 +252,16 @@ def finish_drop(player):
         active_player = player2
     else:
         active_player = player1
-    animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate')
+    animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate', on_finished=do_ai_move)
+
+def do_ai_move():
+    if active_player is player2 and player2.is_ai:
+        random_move = random.choice([keys.J, keys.L])
+        on_key_up(random_move)
+        clock.schedule(drop_ai_block, 0.1)
+
+def drop_ai_block():
+    on_key_up(keys.K)
 
 def is_winner(player):
     """Returns True if the player has won."""
@@ -395,6 +406,8 @@ def on_key_up(key):
     elif key == keys.H:
         show_instructions = not show_instructions
     if show_instructions:
+        if key == keys.K_1:
+            player2.is_ai = True
         return
     if key == keys.S and not player1.falling_block and (debug or active_player is player1):
         drop_selected_block(player1)
