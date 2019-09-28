@@ -359,7 +359,8 @@ def update():
         for player in [player1, player2]:
             for small_shield in list(player.shields):
                 if small_shield.collidepoint(shot.pos):
-                    shots_fired.remove(shot)
+                    if shot in shots_fired:
+                        shots_fired.remove(shot)
                     if shot.image == 'cannon_ball' or small_shield.damaged:
                         player.shields.remove(small_shield)
                     else:
