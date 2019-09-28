@@ -174,22 +174,22 @@ def draw():
     for i in range(8, WIDTH, 32):
         screen.draw.line(
             (i, FINISH_LINE), (i + 16, FINISH_LINE), (255, 32, 32))
-    if winner:
-        if winner is player1:
-            winner_name = "Player 1"
-        else:
-            winner_name = "Player 2"
-        screen.draw.text("{} is the winner!".format(winner_name),
-                         center=(WIDTH // 2, HEIGHT // 2),
-                         color=(255, 0, 0),
-                         fontsize=32,
-                         fontname="1980xx")
     for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
     for medkit_heal in medkit_heals:
         medkit_heal.draw()
     for small_shield in player1.shields + player2.shields:
         small_shield.draw()
+    if winner:
+        if winner is player1:
+            winner_name = "Player 1"
+        else:
+            winner_name = "Player 2"
+        screen.draw.text("{} is the winner!\nPRESS ANY KEY FOR MAIN MENU".format(winner_name),
+                         center=(WIDTH // 2, HEIGHT // 2),
+                         color=(255, 0, 0),
+                         fontsize=32,
+                         fontname="1980xx")
     if show_menu:
         draw_menu()
 
@@ -455,9 +455,22 @@ def is_hit_possible(cannon_ball):
     return (target_top_y <= cannon_ball.y
         and tower_left_x <= cannon_ball.x <= tower_right_x)
 
+def reset_game():
+    global show_menu, active_player, winner
+    show_menu = True
+    for player in [player1, player2]:
+        player.tower.clear()
+        player.shields.clear()
+        player.inventory = make_inventory(player)
+        player.selected_block = 1
+    player2.is_ai = False
+    active_player = player1
+    winner = False
+
 def on_key_down(key):
     global debug, show_menu, selected_option, show_instructions
     if winner:
+        reset_game()
         return
     if show_instructions:
         show_instructions = False
