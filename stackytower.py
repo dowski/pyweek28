@@ -60,7 +60,7 @@ player2.inventory = make_inventory(player2)
 # the icon is the full block.
 full_block_map = {
     'cannon_icon': 'cannon',
-    'large_shield_icon': 'large_shield',
+    'small_shield_icon': 'small_shield_icon',
     'basic': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
@@ -72,6 +72,7 @@ damaged_block_map = {
     'cannon': 'cannon_damaged',
     'shotgun': 'shotgun_damaged',
     'medkit_icon': 'medkit_icon_damaged',
+    'small_shield_icon': 'small_shield_icon_damaged',
 }
 healed_block_map = dict((value, key) for key, value in damaged_block_map.items())
 
@@ -87,7 +88,8 @@ selector2 = Actor('selected_block', (player2.towerx, 50))
 # When player 1 drops a block, this variable will hold its Actor.
 player1.falling_block = None
 player2.falling_block = None
-
+player1.shields = []
+player2.shields = []
 # Cannon balls flying toward a target tower
 shots_fired = []
 
@@ -156,6 +158,8 @@ def draw():
         cannon_ball.draw()
     for medkit_heal in medkit_heals:
         medkit_heal.draw()
+    for small_shield in player1.shields + player2.shields:
+        small_shield.draw()
 
 def debug_text(msg, y, *args):
     screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
@@ -163,8 +167,8 @@ def debug_text(msg, y, *args):
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
     value = random.random()
-    if value > 0.5:
-        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'medkit_icon'])
+    if value > 0.4:
+        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'medkit_icon', 'small_shield_icon'])
     else:
         new_block_image = 'basic'
     new_block = Actor(new_block_image)
@@ -229,6 +233,8 @@ def finish_drop(player):
         fire_shotgun(player, player.falling_block)
     elif player.falling_block.image == 'medkit':
         heal_tower(player, player.falling_block)
+    elif player.falling_block.image == 'small_shield_icon':
+        make_small_shield(player, player.falling_block)
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -268,11 +274,20 @@ def fire_shotgun(player, shotgun):
 
 def heal_tower(player, medkit):
     medkit_heal = Actor('medkit_heal', pos=medkit.pos)
+    sounds.heal.play()
     medkit_heals.append(medkit_heal)
     target_y = medkit.y + BLOCK_HEIGHT * 3
     medkit_heal.target_y = target_y
     medkit_heal.medkit = medkit
     animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
+def make_small_shield(player, small_shield_icon):
+    small_shield = Actor('small_shield', pos=small_shield_icon.pos)
+    if player.facing_left:
+            flip_actor_image(small_shield)
+    sounds.small_shield_on.play()
+    player.shields.append(small_shield)
+    small_shield.damaged = False
+
 
 def cleanup_medkits():
     for medkit_heal in list(medkit_heals):
@@ -285,6 +300,7 @@ def get_tower_top_y(player):
     return HEIGHT - len(player.tower) * BLOCK_HEIGHT - BLOCK_HEIGHT // 2
 
 def update():
+    global small_shield, small_shield_healths, small_shield_health
     # check missed shots to see if they go off screen
     for shot in list(shots_missed):
         if shot.x >= WIDTH or shot.x <= 0:
@@ -312,6 +328,19 @@ def update():
             # it's a miss
             shots_fired.remove(shot)
             shots_missed.append(shot)
+    for shot in list(shots_fired):
+        for player in [player1, player2]:
+            for small_shield in list(player.shields):
+                if small_shield.collidepoint(shot.pos):
+                    shots_fired.remove(shot)
+                    if shot.image == 'cannon_ball' or small_shield.damaged:
+                        player.shields.remove(small_shield)
+                    else:
+                        small_shield.damaged = True
+                        small_shield.image = 'small_shield_damaged'
+                        if shot.target_player.facing_left:
+                            flip_actor_image(small_shield)
+
     for player in players_with_lost_blocks:
         target_y = HEIGHT - BLOCK_HEIGHT // 2
         for block in player.tower:
