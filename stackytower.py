@@ -245,6 +245,8 @@ def finish_drop(player):
         heal_tower(player, player.falling_block)
     elif player.falling_block.image == 'small_shield_icon':
         make_small_shield(player, player.falling_block)
+    elif player.falling_block.image == 'basic':
+        sounds.block_land.play()
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -287,7 +289,12 @@ def fire_shotgun(player, shotgun):
     target, end_shot_x = get_target_player_and_x(player, shotgun)
     sounds.shotgun_boom.play()
     for i in range(-4, 5, 2):
-        shot = Actor('shotgun_shot', pos=shotgun.pos)
+        shot = Actor('shotgun_shot')
+        shot.y = shotgun.y
+        if player.facing_left:
+            shot.x = shotgun.x - 15
+        else:
+            shot.x = shotgun.x + 15
         shots_fired.append(shot)
         shot.target_player = target
         animate(shot, duration=random.uniform(0.4, 0.5), x=end_shot_x, y=shotgun.y + BLOCK_HEIGHT * i)
