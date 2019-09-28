@@ -42,7 +42,7 @@ def make_inventory(player):
     """Makes a starting inventory to show on screen, centered on the towerx
     value."""
     inventory = [
-        Actor('basic'), Actor('basic'), Actor('basic')]
+        Actor('basic_icon'), Actor('basic_icon'), Actor('basic_icon')]
     for actor in inventory:
         if player.facing_left:
             flip_actor_image(actor)
@@ -61,7 +61,7 @@ player2.inventory = make_inventory(player2)
 full_block_map = {
     'cannon_icon': 'cannon',
     'small_shield_icon': 'small_shield_icon',
-    'basic': 'basic',
+    'basic_icon': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
 }
@@ -174,7 +174,7 @@ def replace_block(player):
     if value > 0.4:
         new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'medkit_icon', 'small_shield_icon'])
     else:
-        new_block_image = 'basic'
+        new_block_image = 'basic_icon'
     new_block = Actor(new_block_image)
     if player.facing_left:
         flip_actor_image(new_block)
