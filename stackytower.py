@@ -181,8 +181,9 @@ def draw():
             winner_name = "Player 2"
         screen.draw.text("{} is the winner!".format(winner_name),
                          center=(WIDTH // 2, HEIGHT // 2),
-                         color=(255, 128, 128),
-                         fontsize=32)
+                         color=(255, 0, 0),
+                         fontsize=32,
+                         fontname="1980xx")
     for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
     for medkit_heal in medkit_heals:
