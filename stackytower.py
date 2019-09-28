@@ -100,6 +100,8 @@ shots_missed = []
 # In the game, press / to show debug info
 debug = False
 
+show_instructions = True
+
 active_player = player1
 
 # The winner of the game
@@ -160,6 +162,8 @@ def draw():
         medkit_heal.draw()
     for small_shield in player1.shields + player2.shields:
         small_shield.draw()
+    if show_instructions:
+        draw_instructions()
 
 def debug_text(msg, y, *args):
     screen.draw.text(msg.format(*args), (10, y), color=(255, 0, 0))
@@ -380,8 +384,12 @@ def is_hit_possible(cannon_ball):
 
 def on_key_up(key):
     # When the S key is pressed, add a block for player 1
-    global debug
+    global debug, show_instructions
     if winner:
+        return
+    elif key == keys.H:
+        show_instructions = not show_instructions
+    if show_instructions:
         return
     if key == keys.S and not player1.falling_block and (debug or active_player is player1):
         drop_selected_block(player1)
@@ -423,6 +431,42 @@ def switch_selected_block(player, direction):
         player.inventory[2].x + (direction * player.inventory[2].width),
         player.inventory[2].y)
     player.selected_block -= direction
+
+def draw_instructions():
+    box_top = HEIGHT // 4
+    box_left = WIDTH // 4
+    title_top = box_top + 10
+    instructions_top = title_top + 40
+    instructions_left = box_left + 10
+    screen.draw.filled_rect(Rect(
+            (box_left, box_top),
+            (WIDTH - WIDTH // 2, HEIGHT * .65)),
+        (0, 0, 0))
+    screen.draw.text("STACKY TOWER",
+        centerx=WIDTH // 2,
+        centery=title_top + 20,
+        fontname="1980xx",
+        fontsize=32)
+    instructions = """\
+Player 1
+  Slide Block Left: A
+  Slide Block Right: D
+  Drop Selected Block: S
+
+Player 2
+  Slide Block Left: J
+  Slide Block Right: L
+  Drop Selected Block: K
+
+Player 1 goes first!
+Have fun!
+
+Press H to close these
+instructions (or see them
+again later).
+    """
+    screen.draw.text(instructions, topleft=(instructions_left, instructions_top),
+    fontname="1980xx")
 
 def test_scenario_1():
     player1.tower = []
