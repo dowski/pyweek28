@@ -284,7 +284,7 @@ def finish_drop(player):
 
 def do_ai_move():
     """Selects a random block from the inventory."""
-    if active_player is player2 and player2.is_ai:
+    if not winner and active_player is player2 and player2.is_ai:
         new_block = random.randint(0,2)
         difference = abs(new_block - player2.selected_block)
         for i in range(difference):
