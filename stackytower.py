@@ -185,6 +185,10 @@ def draw():
             winner_name = "Player 1"
         else:
             winner_name = "Player 2"
+        screen.draw.filled_rect(Rect(
+            (WIDTH // 8, HEIGHT / 3),
+            (WIDTH - WIDTH // 4, HEIGHT / 3)),
+            (255, 255, 255))
         screen.draw.text("{} is the winner!\nPRESS ANY KEY FOR MAIN MENU".format(winner_name),
                          center=(WIDTH // 2, HEIGHT // 2),
                          color=(255, 0, 0),
