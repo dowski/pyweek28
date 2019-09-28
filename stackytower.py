@@ -339,6 +339,7 @@ def make_small_shield(player, small_shield_icon):
     small_shield = Actor('small_shield', pos=small_shield_icon.pos)
     if player.facing_left:
             flip_actor_image(small_shield)
+    small_shield_icon.shield = small_shield
     sounds.small_shield_on.play()
     player.shields.append(small_shield)
     small_shield.damaged = False
@@ -405,10 +406,11 @@ def update():
         target_y = HEIGHT - BLOCK_HEIGHT // 2
         for block in player.tower:
             if block.y != target_y:
-                animate(block, y=target_y,
-                        duration=calculate_fall_duration(
-                            block.y, target_y),
-                        tween='bounce_end')
+                # It needs to fall
+                fall_duration = calculate_fall_duration(block.y, target_y)
+                if block.image == 'small_shield_icon':
+                    animate(block.shield, y=target_y, duration=fall_duration)
+                animate(block, y=target_y, duration=fall_duration)
             target_y -= BLOCK_HEIGHT
     # Perform healing actions as medkit heal actions move down the tower.
     for medkit_heal in medkit_heals:
@@ -530,6 +532,6 @@ again later).
 def test_scenario_1():
     player1.tower = []
     for i in range(10):
-        block = Actor('basic')
+        block = Actor('basic_icon')
         block.y = get_tower_top_y(player1)
         player1.tower.append(prepare_for_drop(player1, block))
