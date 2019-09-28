@@ -5,6 +5,15 @@ import pygame.transform
 WIDTH = 480
 HEIGHT = 640
 
+# People with custom keyboard layouts can alter this to their liking.
+P1_LEFT = keys.A
+P1_DROP = keys.S
+P1_RIGHT = keys.D
+
+P2_LEFT = keys.J
+P2_DROP = keys.K
+P2_RIGHT = keys.L
+
 # Some of the block images are bigger than this, but the actual block
 # in the game is considered 32 pixels high (this allows some blocks to
 # visually overlap with others).
@@ -499,30 +508,30 @@ def on_key_down(key):
             if selected_option < 0:
                 selected_option = 2
         return
-    # When the S key is pressed, add a block for player 1
-    if key == keys.S and not player1.falling_block and (debug or active_player is player1):
+    # When P1_DROP is pressed, add a block for player 1
+    if key == P1_DROP and not player1.falling_block and (debug or active_player is player1):
         drop_selected_block(player1)
         replace_block(player1)
-    # When the K key is pressed, add a block for player 2
-    elif key == keys.K \
+    # When P2_DROP is pressed, add a block for player 2
+    elif key == P2_DROP \
             and not player2.falling_block \
             and not player2.is_ai \
             and (debug or active_player is player2):
         drop_selected_block(player2)
         replace_block(player2)
 
-    elif key == keys.A and player1.selected_block < 2:
+    elif key == P1_LEFT and player1.selected_block < 2:
         # Move player1 selected block left
         switch_selected_block(player1, -1)
-    elif key == keys.D and player1.selected_block > 0:
+    elif key == P1_RIGHT and player1.selected_block > 0:
         # Move player1 selected block right
         switch_selected_block(player1, 1)
 
-    elif key == keys.J and not player2.is_ai and player2.selected_block < 2:
+    elif key == P2_LEFT and not player2.is_ai and player2.selected_block < 2:
         # Move player2 selected block left
         switch_selected_block(player2, -1)
-    elif key == keys.L and not player2.is_ai and player2.selected_block > 0:
-        # Move player1 selected block right
+    elif key == P2_RIGHT and not player2.is_ai and player2.selected_block > 0:
+        # Move player2 selected block right
         switch_selected_block(player2, 1)
 
     elif key == keys.SLASH:
