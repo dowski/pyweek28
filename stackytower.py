@@ -391,11 +391,11 @@ def update():
             for block in list(shot.target_player.tower):
                 if block.collidepoint(shot.pos):
                     shots_fired.remove(shot)
+                    sounds.block_damage.play()
                     if shot.image == 'cannon_ball' or block.damaged:
                         shot.target_player.tower.remove(block)
                         players_with_lost_blocks.add(shot.target_player)
                     elif shot.image == 'shotgun_shot' and block.image in damaged_block_map:
-                        sounds.block_damage.play()
                         block.image = damaged_block_map[block.image]
                         if shot.target_player.facing_left:
                             flip_actor_image(block)
@@ -410,6 +410,7 @@ def update():
         for player in [player1, player2]:
             for small_shield in list(player.shields):
                 if small_shield.collidepoint(shot.pos):
+                    sounds.block_damage.play()
                     if shot in shots_fired:
                         shots_fired.remove(shot)
                     if shot.image == 'cannon_ball' or small_shield.damaged:
