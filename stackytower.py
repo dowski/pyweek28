@@ -191,10 +191,10 @@ def debug_text(msg, y, *args):
 def replace_block(player):
     """Replaces the previously selected block with a new random block."""
     value = random.random()
-    if value > 0.4:
-        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'medkit_icon', 'small_shield_icon'])
+    if value > 0.3:
+        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'basic_icon'])
     else:
-        new_block_image = 'basic_icon'
+        new_block_image = random.choice(['medkit_icon', 'small_shield_icon'])
     new_block = Actor(new_block_image)
     if player.facing_left:
         flip_actor_image(new_block)
