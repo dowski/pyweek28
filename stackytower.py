@@ -469,6 +469,7 @@ def reset_game():
         player.selected_block = 1
     player2.is_ai = False
     active_player = player1
+    active_player_marker.x = player1.towerx
     winner = False
 
 def on_key_down(key):
