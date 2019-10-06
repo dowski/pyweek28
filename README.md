@@ -19,6 +19,8 @@ The easiest way to play from source is to use the [Mu editor](https://codewith.m
 from this repo (or extract a zip file) to your preferred location and open `stackytower.py` in Mu. Choose PyGame Zero
 from the Mode selection button and then click Play.
 
+You can also simply extract the .zip file into a virtualenv, `pip install pgzero==1.2` and run `pgzrun stackytower.py`.
+
 If you are running on a Windows platform you may opt to use a pre-built executable (`stackytower.exe`).
 
 ### Game Play
