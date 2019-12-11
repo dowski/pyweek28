@@ -149,20 +149,16 @@ def draw():
     active_player_marker.draw()
     draw_later = []
     for block in player1.tower:
-        if block.image == 'small_shield':
-            draw_later.append(block)
-        else:
+        if block.image != 'small_shield':
             block.draw()
     for block in player2.tower:
-        if block.image == 'small_shield':
-            draw_later.append(block)
-        else:
+        if block.image != 'small_shield':
             block.draw()
     # Now that the two towers have most of their blocks drawn,
     # we can draw the small shields which have to be drawn on
     # top of other blocks.
-    for block in draw_later:
-        block.draw()
+    for small_shield in player1.shields + player2.shields:
+        small_shield.draw()
     for block in player1.inventory:
         block.draw()
     for block in player2.inventory:
@@ -187,8 +183,6 @@ def draw():
         cannon_ball.draw()
     for medkit_heal in medkit_heals:
         medkit_heal.draw()
-    for small_shield in player1.shields + player2.shields:
-        small_shield.draw()
     if winner:
         if winner is player1:
             winner_name = "Player 1"
