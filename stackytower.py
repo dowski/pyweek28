@@ -79,6 +79,7 @@ full_block_map = {
     'basic_icon': 'basic',
     'shotgun_icon': 'shotgun',
     'medkit_icon': 'medkit',
+    'gift_icon': 'gift',
 }
 
 # This dictionary maps block images to their damaged images.
@@ -88,6 +89,7 @@ damaged_block_map = {
     'shotgun': 'shotgun_damaged',
     'medkit_icon': 'medkit_icon_damaged',
     'small_shield_icon': 'small_shield_icon_damaged',
+    'gift': 'gift_damaged',
 }
 # This dictionary maps damaged blocks back to their original values (when healed).
 healed_block_map = dict((value, key) for key, value in damaged_block_map.items())
@@ -139,13 +141,13 @@ winner = None
 # When medkits are dropped, their healing power drifts down the tower.
 # Each medkit creates an Actor and adds it here.
 medkit_heals = []
-
+gifts = []
 # This flag controls the 1-player version of the game. If this flag is
 # True then player 2 is controlled by an "AI".
 player2.is_ai = False
 
 def draw():
-    screen.blit('background', (0, 0))
+    screen.blit('background_winter', (0, 0))
     active_player_marker.draw()
     draw_later = []
     for block in player1.tower:
@@ -209,7 +211,7 @@ def replace_block(player):
     if value > 0.3:
         new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'basic_icon'])
     else:
-        new_block_image = random.choice(['medkit_icon', 'small_shield_icon'])
+        new_block_image = random.choice(['medkit_icon', 'small_shield_icon', 'gift_icon'])
     new_block = Actor(new_block_image)
     if player.facing_left:
         flip_actor_image(new_block)
@@ -263,7 +265,7 @@ def resolve_drop():
                 fall_onto_player_tower(player.falling_block, player)
 
 def finish_drop(player):
-    """Finishes processing the dropped block for the given player.facing_left
+    """Finishes processing the dropped block for the given player.
 
     Adds the block to their tower, removes the falling block, etc.
 
@@ -281,6 +283,8 @@ def finish_drop(player):
         make_small_shield(player, player.falling_block)
     elif player.falling_block.image == 'basic':
         sounds.block_land.play()
+    elif player.falling_block.image == 'gift':
+        give_gift(player)
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -289,6 +293,16 @@ def finish_drop(player):
     else:
         active_player = player1
     animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate', on_finished=do_ai_move)
+def give_gift(player):
+    target_block = player.tower[-2]
+    if target_block.image == 'cannon':
+        fire_cannon(player, target_block)
+    elif target_block.image == 'shotgun':
+        fire_shotgun(player, target_block)
+    elif target_block.image == 'medkit':
+        heal_tower(player, target_block)
+    elif target_block.image == 'small_shield_icon':
+        make_small_shield(player, target_block)
 
 def do_ai_move():
     """Selects a random block from the inventory."""
@@ -354,6 +368,7 @@ def heal_tower(player, medkit):
     medkit_heal.target_y = target_y
     medkit_heal.medkit = medkit
     animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
+
 
 def make_small_shield(player, small_shield_icon):
     """Puts a small shield on the tower near small_shield_icon."""
@@ -444,6 +459,8 @@ def update():
                         if player.facing_left:
                             flip_actor_image(block)
                     block.damaged = False
+
+
 
 def is_not_close_enough(cannon_ball):
     """Returns True if the ball hasn't reached the tower yet."""
