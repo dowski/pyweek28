@@ -294,16 +294,16 @@ def finish_drop(player):
         active_player = player1
     animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate', on_finished=do_ai_move)
 def give_gift(player):
+
     target_block = player.tower[-2]
     if target_block.image == 'cannon':
         fire_cannon(player, target_block)
     elif target_block.image == 'shotgun':
         fire_shotgun(player, target_block)
-    elif target_block.image == 'medkit':
+    elif target_block.image == 'medkit_icon':
         heal_tower(player, target_block)
     elif target_block.image == 'small_shield_icon':
         make_small_shield(player, target_block)
-
 def do_ai_move():
     """Selects a random block from the inventory."""
     if not winner and active_player is player2 and player2.is_ai:
