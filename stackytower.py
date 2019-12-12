@@ -42,10 +42,18 @@ player2.facing_left = True
 
 # In this game there are two players who race to build a tower of blocks.
 # Each tower will be represented by a list created here. We can put blocks
-# in the lists.
+# in the list
 player1.tower = []
 player2.tower = []
-
+snows = []
+def snowfall():
+    snowflake = Actor(random.choice(['snow', 'snow2']), pos = (random.randint(0, WIDTH), 0))
+    animate(snowflake, duration = random.uniform(8, 12), y = HEIGHT, on_finished=kill_snow)
+    snows.append(snowflake)
+def kill_snow():
+    for snowflake in list(snows):
+        if snowflake.y == HEIGHT:
+            snows.remove(snowflake)
 def flip_actor_image(actor):
     """This is a hack to flip actor images.
 
@@ -152,6 +160,8 @@ def draw():
     screen.blit('background_winter', (0, 0))
     active_player_marker.draw()
     draw_later = []
+    for snow in snows:
+        snow.draw()
     for block in player1.tower:
         if block.image != 'small_shield':
             block.draw()
@@ -358,6 +368,7 @@ def fire_cannon(player, cannon_block):
     animate(cannon_ball, x=end_shot_x)
 def fire_snowball_cannon(player, snowball_cannon_block):
     snowball = Actor('snowball', pos=snowball_cannon_block.pos)
+    sounds.snow_boom.play()
     target, end_shot_x = get_target_player_and_x(player, snowball_cannon_block)
     shots_fired.append(snowball)
     snowball.target_player = target
@@ -421,6 +432,7 @@ def get_tower_top_y(player):
 def update():
     global small_shield, small_shield_healths, small_shield_health
     # check missed shots to see if they go off screen
+    snowfall()
     for shot in list(shots_missed):
         if shot.x >= WIDTH or shot.x <= 0:
             shots_missed.remove(shot)
@@ -605,15 +617,28 @@ def draw_menu():
         centerx=WIDTH // 2,
         centery=title_top + 20,
         fontname="1980xx",
+        color=(200, 255, 0),
         fontsize=32)
     if show_instructions:
         draw_instructions(title_top + 40, box_left + 10)
         return
+    screen.draw.text("CHRISTMAS UPDATE",
+        centerx=WIDTH // 2,
+        centery=HEIGHT // 2 + 130,
+        fontname="1980xx",
+        color=(255, 0, 0),
+        fontsize=30)
+    screen.draw.text("2 NEW CHRISTMAS BLOCKS!",
+        centerx=WIDTH // 2,
+        centery=HEIGHT // 2 + 160,
+        fontname="1980xx",
+        color=(0, 255, 0),
+        fontsize=25)
     for i, text in enumerate(menu_options):
         if i == selected_option:
             color = (255, 0, 0)
         else:
-            color = (255, 255, 255)
+            color = (0, 255, 0)
         screen.draw.text(text,
             centerx=WIDTH // 2,
             centery=title_top + i * 30 + 80,
