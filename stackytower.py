@@ -75,6 +75,7 @@ player2.inventory = make_inventory(player2)
 # dropped from the inventory.
 full_block_map = {
     'cannon_icon': 'cannon',
+    'ice_icon': 'snowball_cannon',
     'small_shield_icon': 'small_shield_icon',
     'basic_icon': 'basic',
     'shotgun_icon': 'shotgun',
@@ -86,8 +87,9 @@ full_block_map = {
 damaged_block_map = {
     'basic': 'basic_damaged',
     'cannon': 'cannon_damaged',
+    'snowball_cannon': 'snowball_cannon_damaged',
     'shotgun': 'shotgun_damaged',
-    'medkit_icon': 'medkit_icon_damaged',
+    'medkit': 'medkit_damaged',
     'small_shield_icon': 'small_shield_icon_damaged',
     'gift': 'gift_damaged',
 }
@@ -153,12 +155,19 @@ def draw():
     for block in player1.tower:
         if block.image != 'small_shield':
             block.draw()
+            if block.iced:
+                ice = Actor('iced', pos=block.pos)
+                ice.draw()
     for block in player2.tower:
         if block.image != 'small_shield':
             block.draw()
+            if block.iced:
+                ice = Actor('iced', pos=block.pos)
+                ice.draw()
+
     # Now that the two towers have most of their blocks drawn,
     # we can draw the small shields which have to be drawn on
-    # top of other blocks.
+    # top of other block
     for small_shield in player1.shields + player2.shields:
         small_shield.draw()
     for block in player1.inventory:
@@ -183,6 +192,8 @@ def draw():
             (i, FINISH_LINE), (i + 16, FINISH_LINE), (255, 32, 32))
     for cannon_ball in shots_fired + shots_missed:
         cannon_ball.draw()
+    for snowball in shots_fired + shots_missed:
+        snowball.draw()
     for medkit_heal in medkit_heals:
         medkit_heal.draw()
     if winner:
@@ -209,7 +220,7 @@ def replace_block(player):
     """Replaces the previously selected block with a new random block."""
     value = random.random()
     if value > 0.3:
-        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'basic_icon'])
+        new_block_image = random.choice(['shotgun_icon', 'cannon_icon', 'basic_icon', 'ice_icon'])
     else:
         new_block_image = random.choice(['medkit_icon', 'small_shield_icon', 'gift_icon'])
     new_block = Actor(new_block_image)
@@ -228,6 +239,7 @@ def drop_selected_block(player):
 
 def prepare_for_drop(player, block):
     block.damaged = False
+    block.iced = False
     block.x = player.towerx
     block.image = full_block_map[block.image]
     if player.facing_left:
@@ -271,8 +283,11 @@ def finish_drop(player):
 
     Also triggers special actions for certain blocks.
     """
-    global winner, active_player
     player.tower.append(player.falling_block)
+
+    if len(player.tower) > 1 and player.tower[-2].iced:
+        finish_drop0_2(player)
+        return
     if player.falling_block.image == 'cannon':
         fire_cannon(player, player.falling_block)
     elif player.falling_block.image == 'shotgun':
@@ -285,6 +300,11 @@ def finish_drop(player):
         sounds.block_land.play()
     elif player.falling_block.image == 'gift':
         give_gift(player)
+    elif player.falling_block.image == 'snowball_cannon':
+        fire_snowball_cannon(player, player.falling_block)
+    finish_drop0_2(player)
+def finish_drop0_2(player):
+    global winner, active_player
     player.falling_block = None
     if is_winner(player):
         winner = player
@@ -293,17 +313,19 @@ def finish_drop(player):
     else:
         active_player = player1
     animate(active_player_marker, duration=0.4, x=active_player.towerx, tween='accelerate', on_finished=do_ai_move)
-def give_gift(player):
 
+def give_gift(player):
     target_block = player.tower[-2]
     if target_block.image == 'cannon':
         fire_cannon(player, target_block)
     elif target_block.image == 'shotgun':
         fire_shotgun(player, target_block)
-    elif target_block.image == 'medkit_icon':
+    elif target_block.image == 'medkit':
         heal_tower(player, target_block)
     elif target_block.image == 'small_shield_icon':
         make_small_shield(player, target_block)
+    elif target_block.image == 'snowball_cannon':
+        fire_snowball_cannon(player, target_block)
 def do_ai_move():
     """Selects a random block from the inventory."""
     if not winner and active_player is player2 and player2.is_ai:
@@ -334,7 +356,12 @@ def fire_cannon(player, cannon_block):
     shots_fired.append(cannon_ball)
     cannon_ball.target_player = target
     animate(cannon_ball, x=end_shot_x)
-
+def fire_snowball_cannon(player, snowball_cannon_block):
+    snowball = Actor('snowball', pos=snowball_cannon_block.pos)
+    target, end_shot_x = get_target_player_and_x(player, snowball_cannon_block)
+    shots_fired.append(snowball)
+    snowball.target_player = target
+    animate(snowball, x=end_shot_x)
 def get_target_player_and_x(attacker, attack):
     if attacker is player1:
         return player2, WIDTH + attack.width
@@ -368,7 +395,8 @@ def heal_tower(player, medkit):
     medkit_heal.target_y = target_y
     medkit_heal.medkit = medkit
     animate(medkit_heal, y=target_y, on_finished=cleanup_medkits)
-
+def ice_tower(player, target_block):
+    target_block.iced = True
 
 def make_small_shield(player, small_shield_icon):
     """Puts a small shield on the tower near small_shield_icon."""
@@ -385,7 +413,6 @@ def cleanup_medkits():
     for medkit_heal in list(medkit_heals):
         if medkit_heal.y == medkit_heal.target_y:
             medkit_heals.remove(medkit_heal)
-            medkit_heal.medkit.image = 'medkit_icon'
 
 def get_tower_top_y(player):
     """Returns the y coordinate of the top of the tower."""
@@ -410,7 +437,9 @@ def update():
                 if block.collidepoint(shot.pos):
                     shots_fired.remove(shot)
                     sounds.block_damage.play()
-                    if shot.image == 'cannon_ball' or block.damaged:
+                    if shot.image == 'snowball':
+                        ice_tower(shot.target_player, block)
+                    elif shot.image == 'cannon_ball' or block.damaged:
                         shot.target_player.tower.remove(block)
                         players_with_lost_blocks.add(shot.target_player)
                     elif shot.image == 'shotgun_shot' and block.image in damaged_block_map:
@@ -436,7 +465,7 @@ def update():
                     else:
                         small_shield.damaged = True
                         small_shield.image = 'small_shield_damaged'
-                        if shot.target_player.facing_left:
+                        if small_shield.x > WIDTH/2:
                             flip_actor_image(small_shield)
     # Cause blocks to fall if ones below them were destroyed.
     for player in players_with_lost_blocks:
